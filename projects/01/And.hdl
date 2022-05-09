@@ -7,7 +7,7 @@
  * And gate: 
  * out = 1 if (a == 1 and b == 1)
  *       0 otherwise
- * And=Nand(Nand(a,b)) 或者 And=Nand(Nand(a,b),true)
+ * ab=((ab)'1)' ==> And=Nand(Nand(a,b)) 或者 And=Nand(Nand(a,b),true)
  * 对于And只有同为1才为1，只要有一个0就是0. 对于外部的Nand，当一个管脚为0时，另一个管脚便不起作用。当一个管脚为1时，结果取决于另一个管脚。
  * 内部的Nand真值 00 1，01 1，10 1，11 0.有1 1 1 0四种情况。因为要用Nand构建And。即1 1 1 0取反。
  * 可让另一个管脚为1，则外部Nand的结果取决于内部Nand 1 1 1 0.
@@ -20,5 +20,5 @@ CHIP And {
 
     PARTS:
     Nand(a=a,b=b,out=c);
-    Nand(a=c,b=c,out=out);
+    Nand(a=c,b=true,out=out);
 }

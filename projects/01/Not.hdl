@@ -6,7 +6,7 @@
 /**
  * Not gate:
  * out = not in
- * Not=Nand(a,true)
+ * a'=(a1)' ==>Not=Nand(a,true)
  */
 
 CHIP Not {

@@ -7,6 +7,7 @@
  * Or gate:
  * out = 1 if (a == 1 or b == 1)
  *       0 otherwise
+ * a+b=(a'b')‘ ==>Or=Nand(Not(a),Not(b))
  */
 
 CHIP Or {
@@ -14,5 +15,7 @@ CHIP Or {
     OUT out;
 
     PARTS:
-    // Put your code here:
+    Not(in=a,out=c1);
+    Not(in=b,out=c2);
+    Nand(a=c1,b=c2,out=out);
 }

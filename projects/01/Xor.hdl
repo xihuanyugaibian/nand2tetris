@@ -6,6 +6,7 @@
 /**
  * Exclusive-or gate:
  * out = not (a == b)
+ * Xor=(a+b)(a'b') ==>Xor=And(Or(a,b),Or(Not(a),Not(b)))
  */
 
 CHIP Xor {
@@ -13,5 +14,9 @@ CHIP Xor {
     OUT out;
 
     PARTS:
-    // Put your code here:
+    Not(in=a,out=c1);
+    Not(in=b,out=c2);
+    Or(a=c1,b=c2,out=c3);
+    Or(a=a,b=b,out=c4);
+    And(a=c3,b=c4,out=out);
 }
