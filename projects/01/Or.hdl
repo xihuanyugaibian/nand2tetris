@@ -7,7 +7,7 @@
  * Or gate:
  * out = 1 if (a == 1 or b == 1)
  *       0 otherwise
- * a+b=(a'b')‘ ==>Or=Nand(Not(a),Not(b))
+ * a+b=~(~a~b) ==>Or=Nand(Not(a),Not(b))
  */
 
 CHIP Or {
