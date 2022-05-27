@@ -9,6 +9,8 @@
  *                {0, in, 0, 0} if sel == 01
  *                {0, 0, in, 0} if sel == 10
  *                {0, 0, 0, in} if sel == 11
+ * 00 为a，01为b，10为c，11为d。　
+ × 这里的数组从右到左看[...,3,2,1,0]。右边为低位
  */
 
 CHIP DMux4Way {
@@ -18,10 +20,12 @@ CHIP DMux4Way {
     PARTS:
     Not(in=sel[0],out=o0);
     Not(in=sel[1],out=o1);
+
     And(a=o0,b=o1,out=t0);
-    And(a=o0,b=sel[1],out=t1);
-    And(a=sel[0],b=o1,out=t2);
+    And(a=sel[0],b=o1,out=t1);
+    And(a=o0,b=sel[1],out=t2);
     And(a=sel[0],b=sel[1],out=t3);
+
     And(a=in,b=t0,out=a);
     And(a=in,b=t1,out=b);
     And(a=in,b=t2,out=c);
