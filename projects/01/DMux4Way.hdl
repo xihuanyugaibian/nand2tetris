@@ -11,6 +11,11 @@
  *                {0, 0, 0, in} if sel == 11
  * 00 为a，01为b，10为c，11为d。　
  × 这里的数组从右到左看[...,3,2,1,0]。右边为低位
+ * 思路二：DMux 可以把一个输入转为两个输出，DMux4Way如何使用DMux进行组装？
+ * DMux(in,sel)==>a=in·~sel,b=in·sel==>ao,bo
+ * DMux4Way(in,sel[2])==>a=in·~s1·~s0,b=in·~s1·s0,c=in·s1·~s0,d=in·s1·s0
+ * in·~s1 和 in·s1 可以用DMux(in,sel[1])的两个输出。a=ao·~s0,b=ao·s0,c=bo·~s0,d=bo·s0
+ * a b 可以用DMux(ao,sel[0]),c d可以用DMux(bo,sel[0])
  */
 
 CHIP DMux4Way {
@@ -18,16 +23,20 @@ CHIP DMux4Way {
     OUT a, b, c, d;
 
     PARTS:
-    Not(in=sel[0],out=o0);
-    Not(in=sel[1],out=o1);
+    //Not(in=sel[0],out=o0);
+    //Not(in=sel[1],out=o1);
 
-    And(a=o0,b=o1,out=t0);
-    And(a=sel[0],b=o1,out=t1);
-    And(a=o0,b=sel[1],out=t2);
-    And(a=sel[0],b=sel[1],out=t3);
+    //And(a=o0,b=o1,out=t0);
+    //And(a=sel[0],b=o1,out=t1);
+    //And(a=o0,b=sel[1],out=t2);
+    //And(a=sel[0],b=sel[1],out=t3);
 
-    And(a=in,b=t0,out=a);
-    And(a=in,b=t1,out=b);
-    And(a=in,b=t2,out=c);
-    And(a=in,b=t3,out=d);
+    //And(a=in,b=t0,out=a);
+    //And(a=in,b=t1,out=b);
+    //And(a=in,b=t2,out=c);
+    //And(a=in,b=t3,out=d);
+    //另一种写法
+    DMux(in=in,sel=sel[1],a=o0,b=o1);
+    DMux(in=o0,sel=sel[0],a=a,b=b);
+    DMux(in=o1,sel=sel[0],a=c,b=d);
 }
