@@ -16,4 +16,17 @@ CHIP RAM8 {
 
     PARTS:
     // Put your code here:
+    //八个寄存器的输入都是一样的都是in，关键在于load作用在哪个寄存上。用DMux8Way把load分开。计算各自寄存器的结果，然后把结果用Mux8Way16 把需要的结果输出。
+    DMux8Way(in=load,sel=address,a=aLoad,b=bLoad,c=cLoad,d=dLoad,e=eLoad,f=fLoad,g=gLoad,h=hLoad);
+
+    Register(in=in,load=aLoad,out=o0);
+    Register(in=in,load=bLoad,out=o1);
+    Register(in=in,load=cLoad,out=o2);
+    Register(in=in,load=dLoad,out=o3);
+    Register(in=in,load=eLoad,out=o4);
+    Register(in=in,load=fLoad,out=o5);
+    Register(in=in,load=gLoad,out=o6);
+    Register(in=in,load=hLoad,out=o7);
+
+    Mux8Way16(a=o0,b=o1,c=o2,d=o3,e=o4,f=o5,g=o6,h=o7,sel=address,out=out);
 }
