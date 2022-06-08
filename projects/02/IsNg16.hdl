@@ -1,0 +1,16 @@
+
+
+/**
+ * 判断该输入是都<0.
+ * if in < 0, out = 1,else out = 0
+ */
+
+CHIP IsNg16 {
+    IN in[16];
+    OUT out;
+
+    PARTS:
+    // Put your code here:
+    //一般最高位是符号位，符号位为1 就是负数<0.
+    Mux(a=false,b=true,sel=in[15],out=out);
+}
