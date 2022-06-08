@@ -43,4 +43,44 @@ CHIP ALU {
 
     PARTS:
    // Put you code here:
+   //zx: Mux当sel=0的时候，输出为a，否则输出为b。如果zx为0输出就是x，如果zx为1输出就是false 0.
+   Mux16(a=x,b=false,sel=zx,out=zx_o);
+
+
+   //nx:nx为0输出就是zx_o就是经过了zx的结果。nx为1输出就是not_o（对zx_o取反）
+   Not16(a=zx_o,out=not_x_o);
+   Mux16(a=zx_o,b=not_o,sel=nx,out=nx_o)
+
+   //zy:y输入同x输入
+   Mux16(a=y,b=false,sel=zy,out=zy_o);
+
+   //ny:
+   Not16(a=zy_o,out=not_y_o);
+   Mux16(a=zy_o,b=not_o,sel=nx,out=ny_o);
+
+   //f:f为0输出就是f_and_o=x&y，f为1输出就是x+y。
+   Add16(a=nx_o,b=ny_o,out=f_add_o);
+   And16(a=nx_o,b=ny_o,out=f_and_o);
+   Mux16(a=f_and_o,b=f_add_o,sel=f,out=f_o);
+
+   //no:
+   Not16(a=f_o,out=not_o);
+   Mux16(a=not_o,b=f_o,sel=no,out=out);
+
+   //out的16用or计算，只要有一个1 out就是1.只有全是0的时候，才是0.
+   Or8Way(in=out[0..7],out=o1);
+   Or8Way(in=out[8..15],out=o1);
+   Or(a=o1,b=o2,out=or_o);
+
+   //如果or_o为0就取反输出1. 二进制只有01，如果不为0那就是1输出取反为0. 这里用Mux应该也可以。or_0作为sel。
+   Not(in=or_o,out=zr);
+
+   Mux(a=0,b=1,sel=out[15],out=ng);
+
+
+
+
+
+
+
 }
