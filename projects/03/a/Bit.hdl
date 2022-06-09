@@ -16,5 +16,7 @@ CHIP Bit {
     // Put your code here:
 
     Mux(a=outBranch,b=in,sel=load,out=o);
+    //每个内部管脚都有一个输入和多个输出，也就是说它仅能从单一信号源接收信号，却可以将其输出信号作为多个单元的输入。
+    //这里的DFF的输出有两个管脚，一个直接和单元的输出管脚连接，一个作为内部管脚和Mux输入连接作为下一个输入，至于是否回进入还要看load。
     DFF(in=o,out=out,out=outBranch);
 }
