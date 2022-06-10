@@ -17,6 +17,15 @@ CHIP PC {
 
     PARTS:
     // Put your code here:
+    //1. 每个if条件对应一个选择器Mux
+    //2. if有优先级，对应的选择器也有先后顺序。
+    //3. 选择器先后顺序：inc,load,reset (若reset为true，直接输出0，表示reset对应的选择器在最后面(不考虑寄存器))
+    // 3.1 inc选择器:a=preOut,b=preOut+1,sel=inc
+    // 3.2 load选择器:a=inc的输出，b=in,sel=load
+    // 3.3 reset选择器：a=load的输出，b=false,sel=reset
+    //4. 寄存器只有一个输入，且做存储的作用，所以值会一直被写，区别是写的是新值还是上次的旧值。所以Register的load为true。
+    // 4.1 Register的位置是可变的，可以放在inc，load，reset三个选择器的任意位置 inc前，inc后，load后，reset后。要保证选择器的先后顺序不变。
+    // 4.2 Register的输入就是前面的选择器的输出，如果放在inc前输入就是reset的输出，需要reset额外定义一个内部管脚为preOut
 
     Register(in=outReset,load=true,out=out,out=preOut);
     Mux16(a=outLoad,b=false,sel=reset,out=outReset);
