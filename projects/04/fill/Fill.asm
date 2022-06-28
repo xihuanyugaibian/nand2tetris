@@ -13,7 +13,7 @@
 
 // Put your code here.
 @SCREEN
-D=M
+D=A
 @R0 //BLACK当前位置
 M=D
 @R1 //CLEAN当前位置
@@ -28,7 +28,7 @@ D;JNE
 
 (BLACK)
 @SCREEN
-D=M
+D=A
 @R1
 M=D
 @R0
@@ -41,12 +41,12 @@ M=M+1
 
 (CLEAN)
 @SCREEN
-D=M
+D=A
 @R0
 M=D
 @R1
 A=M
-M=1
+M=0
 @R1
 M=M+1
 @LOOP
