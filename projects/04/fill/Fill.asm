@@ -12,3 +12,42 @@
 // the screen should remain fully clear as long as no key is pressed.
 
 // Put your code here.
+@SCREEN
+D=M
+@R0 //BLACK当前位置
+M=D
+@R1 //CLEAN当前位置
+M=D
+(LOOP)
+@KBD
+D=M
+@BLACK
+D;JNE
+@CLEAN
+0;JMP
+
+(BLACK)
+@SCREEN
+D=M
+@R1
+M=D
+@R0
+A=M
+M=1
+@R0
+M=M+1
+@LOOP
+0;JMP
+
+(CLEAN)
+@SCREEN
+D=M
+@R0
+M=D
+@R1
+A=M
+M=1
+@R1
+M=M+1
+@LOOP
+0;JMP
