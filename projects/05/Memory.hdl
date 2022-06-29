@@ -5,21 +5,28 @@
 
 /**
  * The complete address space of the Hack computer's memory,
- * including RAM and memory-mapped I/O. 
+ * including RAM and memory-mapped I/O.
  * The chip facilitates read and write operations, as follows:
  *     Read:  out(t) = Memory[address(t)](t)
  *     Write: if load(t-1) then Memory[address(t-1)](t) = in(t-1)
- * In words: the chip always outputs the value stored at the memory 
- * location specified by address. If load==1, the in value is loaded 
- * into the memory location specified by address. This value becomes 
+ * In words: the chip always outputs the value stored at the memory
+ * location specified by address. If load==1, the in value is loaded
+ * into the memory location specified by address. This value becomes
  * available through the out output from the next time step onward.
  * Address space rules:
- * Only the upper 16K+8K+1 words of the Memory chip are used. 
- * Access to address>0x6000 is invalid. Access to any address in 
- * the range 0x4000-0x5FFF results in accessing the screen memory 
- * map. Access to address 0x6000 results in accessing the keyboard 
- * memory map. The behavior in these addresses is described in the 
+ * Only the upper 16K+8K+1 words of the Memory chip are used.
+ * Access to address>0x6000 is invalid. Access to any address in
+ * the range 0x4000-0x5FFF results in accessing the screen memory
+ * map. Access to address 0x6000 results in accessing the keyboard
+ * memory map. The behavior in these addresses is described in the
  * Screen and Keyboard chip specifications given in the book.
+ */
+ /*
+ * 000 0000 0000 0000   RAN内存基地址 16K
+ * 011 1111 1111 1111
+ * 100 0000 0000 0000   屏幕内存映像基地址 8K
+ * 101 1111 1111 1111
+ * 110 0000 0000 0000   键盘内存映像基地址 就一个
  */
 
 CHIP Memory {
@@ -28,4 +35,19 @@ CHIP Memory {
 
     PARTS:
     // Put your code here:
+    //如果sel=0，a=in b=0,如果sel=1，a=0 b=in。
+    DMux(in=load,sel=address[14],a=oa,b=ob);
+
+    //16K的RAM只用前14位，address[14]为0表示RAM范围内，为1超过了RAM范围.
+    //即要表示RAM，则第15位即address[14]必为0，此时a=load，RAM16K的load=oa。
+    RAM16K(in=in,load=oa,address=address[0..13],out=o0);
+
+    //ob表示address[14]为1的load，屏幕和键盘的区别在第14位即address[13]。
+    DMux(in=ob,sel=address[13],a=aob,b=bob);
+    Screen(in=in,load=aob,address=address[0..12],out=o11);
+
+    Keyboard(out=o12);
+    Mux16(a=o11,b=o12,sel=address[13],out=o1);
+
+    Mux16(a=o0,b=o1,sel=address[14],out=out);
 }
