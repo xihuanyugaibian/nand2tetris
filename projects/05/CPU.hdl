@@ -9,7 +9,7 @@
  * The CPU is designed to fetch and execute instructions written in
  * the Hack machine language. In particular, functions as follows:
  * Executes the inputted instruction according to the Hack machine
- * language specification. The D and A in the language specification
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            * language specification. The D and A in the language specification
  * refer to CPU-resident registers, while M refers to the external
  * memory location addressed by A, i.e. to Memory[A]. The inM input
  * holds the value of this location. If the current instruction needs
@@ -40,45 +40,51 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
-    //如果sel是1，就是C指令，a=in，isC=1 isA=0，isC和isA总有一个对的，sel=0同理，总有一个是对的一个是错的。
-    DMux(in=true,sel=instruction[15],a=isC,b=isA);
+    //如果sel是1，就是C指令，b=in，isC=1 isA=0，isC和isA总有一个对的，sel=0同理，总有一个是对的一个是错的。
+    DMux(in=true,sel=instruction[15],a=isA,b=isC);
 
 
-    //如果是A指令，或者是C指令但是指令
-    And(a[0..15]=isA,b=instruction,out=A);
     //如果是C指令
-    And(a=isC,b=instruction[3],out=isM);
-    And(a=isC,b=instruction[4],out=zx);
-    And(a=isC,b=instruction[5],out=nx);
-    And(a=isC,b=instruction[6],out=zy);
-    And(a=isC,b=instruction[7],out=ny);
-    And(a=isC,b=instruction[8],out=f);
-    And(a=isC,b=instruction[9],out=no);
-    And(a=isC,b=instruction[10],out=destA);
-    And(a=isC,b=instruction[11],out=destD);
-    And(a=isC,b=instruction[12],out=destM);
-    And(a=isC,b=instruction[13],out=jlt);
-    And(a=isC,b=instruction[14],out=jeq);
-    And(a=isC,b=instruction[15],out=jgt);
-    And16(a[0..15]=isC,b[10..12]=instruction[10..12],out=dest);
-    And16(a[0..15]=isC,b[13..15]=instruction[13..15],out=jump);
+    And(a=isC,b=instruction[12],out=isM);
+    And(a=isC,b=instruction[11],out=zx);
+    And(a=isC,b=instruction[10],out=nx);
+    And(a=isC,b=instruction[9],out=zy);
+    And(a=isC,b=instruction[8],out=ny);
+    And(a=isC,b=instruction[7],out=f);
+    And(a=isC,b=instruction[6],out=no);
+    And(a=isC,b=instruction[5],out=destA);
+    And(a=isC,b=instruction[4],out=destD);
+    And(a=isC,b=instruction[3],out=writeM);
+    And(a=isC,b=instruction[2],out=isJLT);
+    And(a=isC,b=instruction[1],out=isJEQ);
+    And(a=isC,b=instruction[0],out=isJGT);
+    And(a=isJLT,b=ng,out=JLT);
+    And(a=isJEQ,b=zr,out=JEQ);
+    Not(in=ng,out=notNg);
+    Not(in=zr,out=notZr);
+    And(a=notNg,b=notZr,out=positive);
+    And(a=isJGT,b=positive,out=JGT);
+    Or(a=JLT,b=JEQ,out=jumpTemp);
+    Or(a=jumpTemp,b=JGT,out=jump);
+
 
     //对于第一个选择器，是ALU的输出还是instruction作为A寄存器的输入 由控制单元决定，控制单元是由C指令解析出来的。
-    Mux16(a=outAlu,b=instruction,sel=destA,out=firstMux);
-    //对于A寄存器，如果指令是A指令或则和instruction[10]为1的C指令的C指令。
+    Mux16(a=outALU,b=instruction,sel=isA,out=outFirstMux);
+
+    //对于A寄存器，如果指令是A指令或则instruction[10]为1的C指令。
     Or(a=isA,b=destA,out=loadA);
-    ARegister(in=firstMux,load=loadA,out=outA);
-    //对于A/M选择器
-    Mux16(a=outA,b=inM,sel=isM,out=outAM)
+    ARegister(in=outFirstMux,load=loadA,out=outA,out[0..14]=addressM);
+
+    //对于A/M选择器:如果sel是0 out就是outA的值，如果sel=1，out就是outA表示的地址中的数据即inM。
+    Mux16(a=outA,b=inM,sel=isM,out=outAM);
+
+    //对于D寄存器，
+    DRegister(in=outALU,load=destD,out=outD);
 
     //对于ALU
-    ALU(x=outD,y=outAM,zx=zx,nx=nx,zy=zy,ny=ny,f=f,no=no,ng=ng,zr=zr,out=outM,out=outAlu);
 
-    //对于D寄存器
-    DRegister(in=outAlu,load=destD,out=outD);
-    Mux16(a=outD,b=instruction)
+    ALU(x=outD,y=outAM,zx=zx,nx=nx,zy=zy,ny=ny,f=f,no=no,ng=ng,zr=zr,out=outM,out=outALU);
 
-
-
-    PC(in=  ,load=jump,inc=true,reset=reset,out=pc);
+    //对于PC程序计数器
+    PC(in=outA,inc=true,load=jump,reset=reset,out[0..14]=pc);
 }
