@@ -40,6 +40,11 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
+    // 数据入口只有三个，一个是reset做控制的，一个是inM输入的是此时A寄存器表示的地址单元中的值，一个是instruction指令也是A寄存器数值的来源。
+    // 如果要取inM的值，肯定也要先把地址作为A指令，先存到A寄存器，再输入一个C指令来控制。
+    // 指令一次只能有一个，要么是A要么是C。如果是A肯定要存入A寄存器，不然没意义。如果是C肯定不存入A寄存器，直接解析为控制信号。那么isA就是Mux的控制单元，只要是A指令就可以通过Mux。
+    // 对于A寄存器来说，来源数据有可能是A也有可能是outALU。如果是A直接存，如果是outLAU，只有下一个C指令解析后存储位置有destA才会存.A寄存器的控制单元就是isA or destA
+
     //如果sel是1，就是C指令，b=in，isC=1 isA=0，isC和isA总有一个对的，sel=0同理，总有一个是对的一个是错的。
     DMux(in=true,sel=instruction[15],a=isA,b=isC);
 
@@ -82,7 +87,6 @@ CHIP CPU {
     DRegister(in=outALU,load=destD,out=outD);
 
     //对于ALU
-
     ALU(x=outD,y=outAM,zx=zx,nx=nx,zy=zy,ny=ny,f=f,no=no,ng=ng,zr=zr,out=outM,out=outALU);
 
     //对于PC程序计数器
