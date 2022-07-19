@@ -63,11 +63,11 @@ public class Parser {
      * @return {@link #A_COMMAND},{@link #C_COMMAND},{@link #L_COMMAND}
      */
     public String commandType() {
-        char c = currentCommand.charAt(0);
-        if ('@' == c) {
+
+        if (currentCommand.startsWith("@")) {
             return A_COMMAND;
         }
-        if ('(' == c) {
+        if (currentCommand.startsWith("(")) {
             return L_COMMAND;
         }
         return C_COMMAND;
@@ -77,30 +77,40 @@ public class Parser {
      * @return 形如@Xxx或(Xxx)的当前命令的符号或十进制，仅当{@link #commandType()}是A_COMMAND或L_COMMAND时才能调用。
      */
     public String symbol() {
-        currentCommand.replace()
-        return null;
+        return currentCommand.substring(1);
     }
 
     /**
      * @return 当前C指令的dest助记符（8种可能的形式），仅当{@link #commandType()}是C_COMMAND时才能调用。
      */
     public String dest() {
-        return null;
+        int indexOf = currentCommand.indexOf("=");
+        if (indexOf > 0) {
+            return currentCommand.substring(0, indexOf + 1);
+        }
+        return "null";
     }
 
     /**
      * @return 当前C指令的comp助记符（28种可能的形式），仅当{@link #commandType()}是C_COMMAND时才能调用。
      */
     public String comp() {
-        return null;
+        int i0 = currentCommand.indexOf("=");
+        int i1 = currentCommand.indexOf(";");
+        i0 = i0 != -1 ? i0 : 0;
+        i1 = i1 != -1 ? i1 + 1 : currentCommand.length();
+        return currentCommand.substring(i0, i1);
     }
 
     /**
      * @return 当前C指令的jump助记符（8种可能的形式），仅当{@link #commandType()}是C_COMMAND时才能调用。
      */
     public String jump() {
-        return null;
+        int indexOf = currentCommand.indexOf(";");
+        if (indexOf > 0) {
+            return currentCommand.substring(indexOf);
+        }
+        return "null";
     }
-
 
 }
