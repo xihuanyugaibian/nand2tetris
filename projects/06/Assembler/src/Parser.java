@@ -1,5 +1,7 @@
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 /**
  * 封装了对输入代码的访问操作。
@@ -8,9 +10,29 @@ import java.util.ArrayList;
  * 3.去掉所有空格和注释
  */
 public class Parser {
-    private static final String A_COMMAND = "A_COMMAND";
-    private static final String C_COMMAND = "C_COMMAND";
-    private static final String L_COMMAND = "L_COMMAND";
+    public static final String A_COMMAND = "A_COMMAND";
+    public static final String C_COMMAND = "C_COMMAND";
+    public static final String L_COMMAND = "L_COMMAND";
+    private static final HashMap<Integer, String> fillZeroMap = new HashMap(15);
+
+    static {
+
+        fillZeroMap.put(1, "0");
+        fillZeroMap.put(2, "00");
+        fillZeroMap.put(3, "000");
+        fillZeroMap.put(4, "0000");
+        fillZeroMap.put(5, "00000");
+        fillZeroMap.put(6, "000000");
+        fillZeroMap.put(7, "0000000");
+        fillZeroMap.put(8, "00000000");
+        fillZeroMap.put(9, "000000000");
+        fillZeroMap.put(10, "0000000000");
+        fillZeroMap.put(11, "00000000000");
+        fillZeroMap.put(12, "000000000000");
+        fillZeroMap.put(13, "0000000000000");
+        fillZeroMap.put(14, "00000000000000");
+        fillZeroMap.put(15, "000000000000000");
+    }
 
     private ArrayList<String> list = new ArrayList<>();
     private int currentIndex;
@@ -30,12 +52,17 @@ public class Parser {
         String line;
         while ((line = bufferedReader.readLine()) != null) {
             String trim = line.trim();
-            if (!trim.isEmpty()) {
-                list.add(trim);
+            if (trim.isEmpty() || trim.startsWith("//")) {
+                continue;
             }
+            int i = trim.indexOf("//");
+            if (i < 0) {
+                list.add(trim);
+                continue;
+            }
+            list.add(trim.substring(0, i).trim());
         }
-        currentIndex = 0;
-        currentCommand = null;
+        reset();
     }
 
     /**
@@ -43,7 +70,7 @@ public class Parser {
      *
      * @return true 有，false 无
      */
-    public boolean hasMoreCommands() {
+    private boolean hasMoreCommands() {
         return list.size() - currentIndex > 0;
     }
 
@@ -51,9 +78,14 @@ public class Parser {
      * 从输入当中读取下一条命令，将其当作“当前命令”。
      * 仅当{@link #hasMoreCommands()}为真时，才能调用本程序。最初始的时候，没有“当前命令”。
      */
-    public void advance() {
+    private void advance() {
         currentCommand = list.get(currentIndex);
         currentIndex++;
+    }
+
+    private void reset() {
+        currentCommand = null;
+        currentIndex = 0;
     }
 
 
@@ -62,7 +94,7 @@ public class Parser {
      *
      * @return {@link #A_COMMAND},{@link #C_COMMAND},{@link #L_COMMAND}
      */
-    public String commandType() {
+    private String commandType() {
 
         if (currentCommand.startsWith("@")) {
             return A_COMMAND;
@@ -76,17 +108,23 @@ public class Parser {
     /**
      * @return 形如@Xxx或(Xxx)的当前命令的符号或十进制，仅当{@link #commandType()}是A_COMMAND或L_COMMAND时才能调用。
      */
-    public String symbol() {
-        return currentCommand.substring(1);
+    private String symbol() {
+        String commandType = commandType();
+        if (A_COMMAND.equals(commandType)) {
+            return currentCommand.substring(1);
+        } else {
+//L指令只要括号中间的。
+            return currentCommand.substring(1, currentCommand.length() - 1);
+        }
     }
 
     /**
      * @return 当前C指令的dest助记符（8种可能的形式），仅当{@link #commandType()}是C_COMMAND时才能调用。
      */
-    public String dest() {
+    private String dest() {
         int indexOf = currentCommand.indexOf("=");
         if (indexOf > 0) {
-            return currentCommand.substring(0, indexOf + 1);
+            return currentCommand.substring(0, indexOf);
         }
         return "null";
     }
@@ -94,23 +132,89 @@ public class Parser {
     /**
      * @return 当前C指令的comp助记符（28种可能的形式），仅当{@link #commandType()}是C_COMMAND时才能调用。
      */
-    public String comp() {
+    private String comp() {
         int i0 = currentCommand.indexOf("=");
         int i1 = currentCommand.indexOf(";");
-        i0 = i0 != -1 ? i0 : 0;
-        i1 = i1 != -1 ? i1 + 1 : currentCommand.length();
+        i0 = i0 != -1 ? i0 + 1 : 0;
+        i1 = i1 != -1 ? i1 : currentCommand.length();
         return currentCommand.substring(i0, i1);
     }
 
     /**
      * @return 当前C指令的jump助记符（8种可能的形式），仅当{@link #commandType()}是C_COMMAND时才能调用。
      */
-    public String jump() {
+    private String jump() {
         int indexOf = currentCommand.indexOf(";");
         if (indexOf > 0) {
-            return currentCommand.substring(indexOf);
+            return currentCommand.substring(indexOf + 1);
         }
         return "null";
     }
 
+    /**
+     * 初始化符号,将汇编语言中自定义的符号初始化到符号表{@link SymbolTable}中
+     */
+    private void initSymbol() {
+        int symbolInitAddress = 16;
+        while (this.hasMoreCommands()) {
+            this.advance();
+            String commandType = this.commandType();
+            if (L_COMMAND.equals(commandType)) {
+                String symbol = this.symbol();
+                SymbolTable.addEntry(symbol, symbolInitAddress++);
+            }
+        }
+        this.reset();
+    }
+
+    /**
+     * 将不满16位的二进制指令，左边补零为16位的二进制指令。
+     *
+     * @param binaryCommand 二进制的指令
+     * @return 16位的二进制指令。
+     */
+    private String get16bitsBinaryCommand(String binaryCommand) {
+        if (binaryCommand.length() < 16) {
+            return fillZeroMap.get(16 - binaryCommand.length()) + binaryCommand;
+        }
+        return binaryCommand;
+    }
+
+    /**
+     * 获取解析后的指令集合
+     *
+     * @return 指令集合
+     */
+    public List<String> getBinaryCommands() {
+        initSymbol();
+
+        List<String> list = new ArrayList<>();
+        while (this.hasMoreCommands()) {
+            this.advance();
+            String commandType = this.commandType();
+            if (A_COMMAND.equals(commandType)) {
+                String symbol = this.symbol();
+                String binaryString = null;
+                if (SymbolTable.contains(symbol)) {
+                    binaryString = Integer.toBinaryString(SymbolTable.getAddress(symbol));
+                } else {
+                    binaryString = Integer.toBinaryString(Integer.parseInt(symbol));
+                }
+                list.add(get16bitsBinaryCommand(binaryString));
+                continue;
+            }
+            if (L_COMMAND.equals(commandType)) {
+                int address = SymbolTable.getAddress(this.symbol());
+                list.add(get16bitsBinaryCommand(Integer.toBinaryString(address)));
+                continue;
+            }
+            if (C_COMMAND.equals(commandType)) {
+                String dest = Code.dest(this.dest());
+                String comp = Code.comp(this.comp());
+                String jump = Code.jump(this.jump());
+                list.add("111" + comp + dest + jump);
+            }
+        }
+        return list;
+    }
 }
