@@ -16,7 +16,6 @@ public class Parser {
     private static final HashMap<Integer, String> fillZeroMap = new HashMap(15);
 
     static {
-
         fillZeroMap.put(1, "0");
         fillZeroMap.put(2, "00");
         fillZeroMap.put(3, "000");
@@ -35,8 +34,19 @@ public class Parser {
     }
 
     private ArrayList<String> list = new ArrayList<>();
+    /**
+     * 当前汇编命令的索引位置
+     */
     private int currentIndex;
+    /**
+     * 当前汇编命令
+     */
     private String currentCommand;
+    /**
+     * 当前汇编命令在内存中的地址，程序命令在内存中的地址从0开始。
+     * (Xxx)标签声明 从汇编语言来说算是一个命令，从占用内存来说 不占用内存地址。
+     */
+    private int currentCommandAddress;
 
 
     public Parser(String filePath) throws IOException {
@@ -50,18 +60,22 @@ public class Parser {
     public Parser(Reader reader) throws IOException {
         BufferedReader bufferedReader = new BufferedReader(reader);
         String line;
+        //循环读取文件汇编文件中的信息，一次读一行
         while ((line = bufferedReader.readLine()) != null) {
+            //去掉前后的空格，如果时空或者以//开头，表示该行不是正式的指令，跳过该行。
             String trim = line.trim();
             if (trim.isEmpty() || trim.startsWith("//")) {
                 continue;
             }
-            int i = trim.indexOf("//");
-            if (i < 0) {
-                list.add(trim);
-                continue;
+            //正式指令后面可能跟的有注释，去掉注释还有多余的空格
+            if (trim.contains("//")) {
+                trim.replace(" ", "");
+                int i = trim.indexOf("//");
+                trim = trim.substring(0, i);
             }
-            list.add(trim.substring(0, i).trim());
+            list.add(trim);
         }
+        //初始化成员变量
         reset();
     }
 
@@ -71,7 +85,7 @@ public class Parser {
      * @return true 有，false 无
      */
     private boolean hasMoreCommands() {
-        return list.size() - currentIndex > 0;
+        return list.size() - currentIndex > 1;
     }
 
     /**
@@ -79,15 +93,41 @@ public class Parser {
      * 仅当{@link #hasMoreCommands()}为真时，才能调用本程序。最初始的时候，没有“当前命令”。
      */
     private void advance() {
-        currentCommand = list.get(currentIndex);
         currentIndex++;
+        currentCommandAddress++;
+        currentCommand = list.get(currentIndex);
+        //如果上一条汇编时标签声明，该行不占内存，实际地址应该-1.起始的没有上一条。
+        if (currentIndex > 0) {
+            String lastCommand = list.get(currentIndex - 1);
+            String commandType = commandType(lastCommand);
+            if (L_COMMAND.equals(commandType)) {
+                currentCommandAddress--;
+            }
+        }
     }
 
     private void reset() {
         currentCommand = null;
-        currentIndex = 0;
+        currentIndex = -1;
+        currentCommandAddress = -1;
     }
 
+
+    /**
+     * 返回当前命令类型.
+     *
+     * @param command 指令
+     * @return {@link #A_COMMAND},{@link #C_COMMAND},{@link #L_COMMAND}
+     */
+    private String commandType(String command) {
+        if (command.startsWith("@")) {
+            return A_COMMAND;
+        }
+        if (command.startsWith("(")) {
+            return L_COMMAND;
+        }
+        return C_COMMAND;
+    }
 
     /**
      * 返回当前命令类型.
@@ -95,14 +135,7 @@ public class Parser {
      * @return {@link #A_COMMAND},{@link #C_COMMAND},{@link #L_COMMAND}
      */
     private String commandType() {
-
-        if (currentCommand.startsWith("@")) {
-            return A_COMMAND;
-        }
-        if (currentCommand.startsWith("(")) {
-            return L_COMMAND;
-        }
-        return C_COMMAND;
+        return commandType(currentCommand);
     }
 
     /**
@@ -113,7 +146,7 @@ public class Parser {
         if (A_COMMAND.equals(commandType)) {
             return currentCommand.substring(1);
         } else {
-//L指令只要括号中间的。
+            //L指令(标签声明)只要括号中间的。表示当前命令所在的地址。
             return currentCommand.substring(1, currentCommand.length() - 1);
         }
     }
@@ -155,16 +188,28 @@ public class Parser {
      * 初始化符号,将汇编语言中自定义的符号初始化到符号表{@link SymbolTable}中
      */
     private void initSymbol() {
-        int symbolInitAddress = 16;
+        //初始化标签
         while (this.hasMoreCommands()) {
             this.advance();
-            String commandType = this.commandType();
-            if (L_COMMAND.equals(commandType)) {
+            if (L_COMMAND.equals(this.commandType())) {
                 String symbol = this.symbol();
-                SymbolTable.addEntry(symbol, symbolInitAddress++);
+                SymbolTable.addEntry(symbol, this.currentCommandAddress);
             }
         }
         this.reset();
+        //初始化变量
+        int variableAddress = 16;
+        while (this.hasMoreCommands()) {
+            this.advance();
+            if (A_COMMAND.equals(this.commandType())) {
+                String symbol = this.symbol();
+                boolean digit = Character.isDigit(symbol.charAt(0));
+                if (!digit && !SymbolTable.contains(symbol)) {
+                    SymbolTable.addEntry(symbol, variableAddress++);
+                }
+            }
+        }
+        reset();
     }
 
     /**
@@ -201,11 +246,6 @@ public class Parser {
                     binaryString = Integer.toBinaryString(Integer.parseInt(symbol));
                 }
                 list.add(get16bitsBinaryCommand(binaryString));
-                continue;
-            }
-            if (L_COMMAND.equals(commandType)) {
-                int address = SymbolTable.getAddress(this.symbol());
-                list.add(get16bitsBinaryCommand(Integer.toBinaryString(address)));
                 continue;
             }
             if (C_COMMAND.equals(commandType)) {

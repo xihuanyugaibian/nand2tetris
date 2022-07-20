@@ -3,3 +3,6 @@
 /**/*.out
 /nand2tetris/*
 /tools
+/**/*.class
+/projects/06/**/*.hack
+/projects/06/Assembler/Assembler.iml
