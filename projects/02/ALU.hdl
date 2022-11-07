@@ -7,7 +7,7 @@
  * The ALU (Arithmetic Logic Unit).
  * Computes one of the following functions:
  * x+y, x-y, y-x, 0, 1, -1, x, y, -x, -y, !x, !y,
- * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs, 
+ * x+1, y+1, x-1, y-1, x&y, x|y on two 16-bit inputs,
  * according to 6 input bits denoted zx,nx,zy,ny,f,no.
  * In addition, the ALU computes two 1-bit outputs:
  * if the ALU output == 0, zr is set to 1; otherwise zr is set to 0;
@@ -27,8 +27,8 @@
 // if (out < 0) set ng = 1
 
 CHIP ALU {
-    IN  
-        x[16], y[16],  // 16-bit inputs        
+    IN
+        x[16], y[16],  // 16-bit inputs
         zx, // zero the x input?
         nx, // negate the x input?
         zy, // zero the y input?
@@ -36,7 +36,7 @@ CHIP ALU {
         f,  // compute out = x + y (if 1) or x & y (if 0)
         no; // negate the out output?
 
-    OUT 
+    OUT
         out[16], // 16-bit output
         zr, // 1 if (out == 0), 0 otherwise
         ng; // 1 if (out < 0),  0 otherwise
@@ -44,43 +44,38 @@ CHIP ALU {
     PARTS:
    // Put you code here:
    //zx: Mux当sel=0的时候，输出为a，否则输出为b。如果zx为0输出就是x，如果zx为1输出就是false 0.
-   Mux16(a=x,b=false,sel=zx,out=zx_o);
+   Mux16(a=x,b=false,sel=zx,out=zxo);
 
 
-   //nx:nx为0输出就是zx_o就是经过了zx的结果。nx为1输出就是not_o（对zx_o取反）
-   Not16(a=zx_o,out=not_x_o);
-   Mux16(a=zx_o,b=not_o,sel=nx,out=nx_o)
+   //nx:nx为0输出就是zxo就是经过了zx的结果。nx为1输出就是noto（对zxo取反）
+   Not16(in=zxo,out=notxo);
+   Mux16(a=zxo,b=notxo,sel=nx,out=nxo);
 
    //zy:y输入同x输入
-   Mux16(a=y,b=false,sel=zy,out=zy_o);
+   Mux16(a=y,b=false,sel=zy,out=zyo);
 
    //ny:
-   Not16(a=zy_o,out=not_y_o);
-   Mux16(a=zy_o,b=not_o,sel=nx,out=ny_o);
+   Not16(in=zyo,out=notyo);
+   Mux16(a=zyo,b=notyo,sel=ny,out=nyo);
 
-   //f:f为0输出就是f_and_o=x&y，f为1输出就是x+y。
-   Add16(a=nx_o,b=ny_o,out=f_add_o);
-   And16(a=nx_o,b=ny_o,out=f_and_o);
-   Mux16(a=f_and_o,b=f_add_o,sel=f,out=f_o);
+   //f:f为0输出就是fando=x&y，f为1输出就是x+y。
+   Add16(a=nxo,b=nyo,out=faddo);
+   And16(a=nxo,b=nyo,out=fando);
+   Mux16(a=fando,b=faddo,sel=f,out=fo);
 
-   //no:
-   Not16(a=f_o,out=not_o);
-   Mux16(a=not_o,b=f_o,sel=no,out=out);
+   //no: no为0输出就是fo，no为1输出就是noto即fo取反。
+   Not16(in=fo,out=noto);
+   //outbranch：因为Mux16的out就是一个最终的输出，但是该输出内部还需要使用，所以需要定义一个内部引脚，以供内部其他元件使用
+   Mux16(a=fo,b=noto,sel=no,out=out,out=outbranch);
 
    //out的16用or计算，只要有一个1 out就是1.只有全是0的时候，才是0.
-   Or8Way(in=out[0..7],out=o1);
-   Or8Way(in=out[8..15],out=o1);
-   Or(a=o1,b=o2,out=or_o);
+   //Or16Way是自定义的，因为outbranch为内部引脚，hdl好像不能使用内部引脚的子总线。只能把内部引脚传入放入另一个原件中，在另一个原件中使用子总线。
+   Or16Way(in=outbranch,out=or16o);
 
-   //如果or_o为0就取反输出1. 二进制只有01，如果不为0那就是1输出取反为0. 这里用Mux应该也可以。or_0作为sel。
-   Not(in=or_o,out=zr);
+   //如果oro为0就取反输出1. 二进制只有01，如果不为0那就是1输出取反为0. 这里用Mux也可以。or0作为sel。
+   //Mux(a=true,b=false,sel=or16o,out=zr);
+   Not(in=or16o,out=zr);
 
-   Mux(a=0,b=1,sel=out[15],out=ng);
-
-
-
-
-
-
-
+   //IsNg16是自定义的，因为outbranch为内部引脚，hdl好像不能使用内部引脚的子总线。只能把内部引脚传入放入另一个原件中，在另一个原件中使用子总线。
+   IsNg16(in=outbranch,out=ng);
 }
