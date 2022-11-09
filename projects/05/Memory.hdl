@@ -35,7 +35,8 @@ CHIP Memory {
 
     PARTS:
     // Put your code here:
-    //如果sel=0，a=in b=0,如果sel=1，a=0 b=in。
+    //判断load作用于哪个部分，也就是address地址在哪个区域。address[14]=0 地址在RAM，address[14]=1地址在屏幕或者键盘
+    //如果sel=0，a=in b=0,如果sel=1，a=0 b=in。a表示作用于RAM的load，b表示作用于屏幕或者键盘的load
     DMux(in=load,sel=address[14],a=oa,b=ob);
 
     //16K的RAM只用前14位，address[14]为0表示RAM范围内，为1超过了RAM范围.
@@ -47,7 +48,7 @@ CHIP Memory {
     Screen(in=in,load=aob,address=address[0..12],out=o11);
 
     Keyboard(out=o12);
+    //根据地址 决定哪个区域作为内存的输出
     Mux16(a=o11,b=o12,sel=address[13],out=o1);
-
     Mux16(a=o0,b=o1,sel=address[14],out=out);
 }
