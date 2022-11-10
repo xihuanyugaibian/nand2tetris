@@ -1,3 +1,5 @@
+package assembler;
+
 import java.util.HashMap;
 
 /**
