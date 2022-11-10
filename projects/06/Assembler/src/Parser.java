@@ -62,7 +62,7 @@ public class Parser {
         String line;
         //循环读取文件汇编文件中的信息，一次读一行
         while ((line = bufferedReader.readLine()) != null) {
-            //去掉前后的空格，如果时空或者以//开头，表示该行不是正式的指令，跳过该行。
+            //去掉前后的空格，如果是空或者以//开头，表示该行不是正式的指令，跳过该行。
             String trim = line.trim();
             if (trim.isEmpty() || trim.startsWith("//")) {
                 continue;
@@ -188,7 +188,7 @@ public class Parser {
      * 初始化符号,将汇编语言中自定义的符号初始化到符号表{@link SymbolTable}中
      */
     private void initSymbol() {
-        //初始化标签
+        //初始化标签：把伪命令的符号存入符号表
         while (this.hasMoreCommands()) {
             this.advance();
             if (L_COMMAND.equals(this.commandType())) {
