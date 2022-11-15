@@ -43,23 +43,23 @@ public class Parser {
     public static final String RETURN = "return";
     public static final Map<String, String> commandMapType = new HashMap<String, String>() {
         {
-            commandMapType.put(ADD, C_ARITHMETIC);
-            commandMapType.put(SUB, C_ARITHMETIC);
-            commandMapType.put(NEG, C_ARITHMETIC);
-            commandMapType.put(EQ, C_ARITHMETIC);
-            commandMapType.put(GT, C_ARITHMETIC);
-            commandMapType.put(LT, C_ARITHMETIC);
-            commandMapType.put(AND, C_ARITHMETIC);
-            commandMapType.put(OR, C_ARITHMETIC);
-            commandMapType.put(NOT, C_ARITHMETIC);
-            commandMapType.put(PUSH, C_PUSH);
-            commandMapType.put(POP, C_POP);
-            commandMapType.put(LABEL, C_LABEL);
-            commandMapType.put(GOTO, C_GOTO);
-            commandMapType.put(IF, C_IF);
-            commandMapType.put(FUNCTION, C_FUNCTION);
-            commandMapType.put(RETURN, C_RETURN);
-            commandMapType.put(CALL, C_CALL);
+            this.put(ADD, C_ARITHMETIC);
+            this.put(SUB, C_ARITHMETIC);
+            this.put(NEG, C_ARITHMETIC);
+            this.put(EQ, C_ARITHMETIC);
+            this.put(GT, C_ARITHMETIC);
+            this.put(LT, C_ARITHMETIC);
+            this.put(AND, C_ARITHMETIC);
+            this.put(OR, C_ARITHMETIC);
+            this.put(NOT, C_ARITHMETIC);
+            this.put(PUSH, C_PUSH);
+            this.put(POP, C_POP);
+            this.put(LABEL, C_LABEL);
+            this.put(GOTO, C_GOTO);
+            this.put(IF, C_IF);
+            this.put(FUNCTION, C_FUNCTION);
+            this.put(RETURN, C_RETURN);
+            this.put(CALL, C_CALL);
         }
     };
 
@@ -72,7 +72,7 @@ public class Parser {
      * 当前汇编命令
      */
     private String currentCommand;
-    private String commandType;
+    private String command;
     private String arg1;
     private Integer arg2;
 
@@ -122,15 +122,16 @@ public class Parser {
         currentIndex++;
         currentCommand = commands.get(currentIndex);
         String[] split = currentCommand.split(SPACE);
-        commandType = commandMapType.get(split[0]);
-        arg1 = split[1];
-        arg2 = Integer.parseInt(split[2]);
+        command = split[0];
+        if (!C_ARITHMETIC.equals(commandType())) {
+            arg1 = split[1];
+            arg2 = Integer.parseInt(split[2]);
+        }
 
     }
 
     private void reset() {
         currentCommand = null;
-        commandType = null;
         arg1 = null;
         arg2 = null;
         currentIndex = -1;
@@ -143,8 +144,7 @@ public class Parser {
      * {@link #C_IF},{@link #C_FUNCTION},{@link #C_RETURN},{@link #C_CALL}
      */
     public String commandType() {
-        String[] split = currentCommand.split(SPACE);
-        return commandMapType.get(split[0]);
+        return commandMapType.get(command);
     }
 
     /**
@@ -172,12 +172,12 @@ public class Parser {
             this.advance();
             String commandType = commandType();
             if (C_ARITHMETIC.equals(commandType)) {
-                codeWriter.writeArithmetic(commandType);
+                asmCommands.add(codeWriter.writeArithmetic(command));
             }
-            if (POP.equals(commandType) || PUSH.equals(commandType)) {
-                codeWriter.writePushPop(commandType, arg1, arg2);
+            if (C_POP.equals(commandType) || C_PUSH.equals(commandType)) {
+                asmCommands.add(codeWriter.writePushPop(commandType, arg1, arg2));
             }
         }
-        return null;
+        return asmCommands;
     }
 }
