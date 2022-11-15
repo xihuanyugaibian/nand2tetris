@@ -1,27 +1,19 @@
 package vm_to_hack;
 
-import java.util.List;
-
 public class CodeWriter {
-    private List<String> commands;
+    private int SP = 0;
+    private int LCL = 1;
+    private int ARG = 2;
+    private int THIS = 3;
+    private int THAT = 4;
 
-    public CodeWriter(List commands) {
-        this.commands = commands;
-    }
-
-    public void setFileName(String fileName) {
-
-    }
 
     public void writeArithmetic(String command) {
 
     }
 
-    public void writePushPop(String command) {
+    public void writePushPop(String commandType, String segment, Integer index) {
 
     }
 
-    public void close() {
-
-    }
 }

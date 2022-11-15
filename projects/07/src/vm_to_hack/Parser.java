@@ -3,6 +3,7 @@ package vm_to_hack;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -12,6 +13,7 @@ import java.util.Map;
  * 3.去掉所有空格和注释
  */
 public class Parser {
+    private CodeWriter codeWriter = new CodeWriter();
     public static final String SPACE = " ";
     public static final String C_ARITHMETIC = "C_ARITHMETIC";
     public static final String C_PUSH = "C_PUSH";
@@ -39,7 +41,7 @@ public class Parser {
     public static final String FUNCTION = "function";
     public static final String CALL = "call";
     public static final String RETURN = "return";
-    public static final Map<String, String> commandMapType = new HashMap<>() {
+    public static final Map<String, String> commandMapType = new HashMap<String, String>() {
         {
             commandMapType.put(ADD, C_ARITHMETIC);
             commandMapType.put(SUB, C_ARITHMETIC);
@@ -70,6 +72,9 @@ public class Parser {
      * 当前汇编命令
      */
     private String currentCommand;
+    private String commandType;
+    private String arg1;
+    private Integer arg2;
 
     public Parser(String filePath) throws IOException {
         this(new FileInputStream(filePath));
@@ -116,10 +121,18 @@ public class Parser {
     private void advance() {
         currentIndex++;
         currentCommand = commands.get(currentIndex);
+        String[] split = currentCommand.split(SPACE);
+        commandType = commandMapType.get(split[0]);
+        arg1 = split[1];
+        arg2 = Integer.parseInt(split[2]);
+
     }
 
     private void reset() {
         currentCommand = null;
+        commandType = null;
+        arg1 = null;
+        arg2 = null;
         currentIndex = -1;
     }
 
@@ -140,8 +153,7 @@ public class Parser {
      * 当前命令类型为{@link #C_RETURN}时,不应该调用本程序.
      */
     public String arg1() {
-        String[] split = currentCommand.split(SPACE);
-        return split[1];
+        return arg1;
     }
 
     /**
@@ -150,8 +162,22 @@ public class Parser {
      * 当前命令类型为{@link #C_RETURN}时,不应该调用本程序.
      */
     public int arg2() {
-        String[] split = currentCommand.split(SPACE);
-        return Integer.parseInt(split[2]);
+        return arg2;
     }
 
+
+    public List<String> getASMCommands() {
+        List<String> asmCommands = new ArrayList<>();
+        while (this.hasMoreCommands()) {
+            this.advance();
+            String commandType = commandType();
+            if (C_ARITHMETIC.equals(commandType)) {
+                codeWriter.writeArithmetic(commandType);
+            }
+            if (POP.equals(commandType) || PUSH.equals(commandType)) {
+                codeWriter.writePushPop(commandType, arg1, arg2);
+            }
+        }
+        return null;
+    }
 }
