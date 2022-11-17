@@ -6,8 +6,7 @@ import java.util.List;
 public class Main {
 
     public static void main(String[] args) throws IOException {
-        String filePath = "D:\\workspace\\IdeaProjects\\nand2tetris\\projects\\07\\StackArithmetic\\SimpleAdd\\SimpleAdd.vm";
-        String parentPath = "D:\\workspace\\IdeaProjects\\nand2tetris\\projects\\07\\StackArithmetic\\SimpleAdd\\SimpleAdd.vm";
+        String filePath = "D:\\fykData\\document\\计算机系统要素\\nand2tetris\\projects\\07\\StackArithmetic\\StackTest\\StackTest.vm";
         Parser parser = new Parser(filePath);
         List<String> asmCommand = parser.getASMCommands();
 

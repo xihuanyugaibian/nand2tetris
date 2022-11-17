@@ -14,7 +14,7 @@ public class CodeWriter {
     private static String SEGMENT_THAT = "that";
     private static String SEGMENT_POINTER = "pointer";
     private static String SEGMENT_TEMP = "temp";
-
+    private int i;
 
     public String writeArithmetic(String command) {
         String asmCommand = null;
@@ -25,8 +25,129 @@ public class CodeWriter {
                     "A=A-1\n" +
                     "D=D+M\n" +
                     "M=D\n" +
-                    "D=A\n" +
                     "@SP\n" +
+                    "M=M-1\n";
+        }
+        if (Parser.SUB.equals(command)) {
+            asmCommand = "@SP\n" +
+                    "A=M-1\n" +
+                    "D=M\n" +
+                    "A=A-1\n" +
+                    "D=M-D\n" +
+                    "M=D\n" +
+                    "@SP\n" +
+                    "M=M-1\n";
+        }
+        if (Parser.NEG.equals(command)) {
+            asmCommand = "@SP\n" +
+                    "A=M-1\n" +
+                    "D=M\n" +
+                    "D=-D\n" +
+                    "M=D\n";
+        }
+        if (Parser.EQ.equals(command)) {
+            asmCommand = "@SP\n" +
+                    "A=M-1\n" +
+                    "D=M\n" +
+                    "A=A-1\n" +
+                    "D=M-D\n" +
+                    "@EQ" + i + "\n" +
+                    "D;JEQ\n" +
+                    "@SP\n" +
+                    "AD=M-1\n" +
+                    "A=A-1\n" +
+                    "M=-1\n" +
+                    "@SP\n" +
+                    "M=D\n" +
+                    "@END" + i + "\n" +
+                    "0;JMP\n" +
+                    "(EQ" + i + ")\n" +
+                    "@SP\n" +
+                    "AD=M-1\n" +
+                    "A=A-1\n" +
+                    "M=-1\n" +
+                    "@SP\n" +
+                    "M=D\n" +
+                    "(END" + i + ")\n";
+            i++;
+        }
+        if (Parser.GT.equals(command)) {
+            asmCommand = "@SP\n" +
+                    "A=M-1\n" +
+                    "D=M\n" +
+                    "A=A-1\n" +
+                    "D=M-D\n" +
+                    "@GT" + i + "\n" +
+                    "D;JGT\n" +
+                    "@SP\n" +
+                    "AD=M-1\n" +
+                    "A=A-1\n" +
+                    "M=-1\n" +
+                    "@SP\n" +
+                    "M=D\n" +
+                    "@END" + i + "\n" +
+                    "0;JMP\n" +
+                    "(GT" + i + ")\n" +
+                    "@SP\n" +
+                    "AD=M-1\n" +
+                    "A=A-1\n" +
+                    "M=-1\n" +
+                    "@SP\n" +
+                    "M=D\n" +
+                    "(END" + i + ")\n";
+            i++;
+        }
+        if (Parser.LT.equals(command)) {
+            asmCommand = "@SP\n" +
+                    "A=M-1\n" +
+                    "D=M\n" +
+                    "A=A-1\n" +
+                    "D=M-D\n" +
+                    "@LT" + i + "\n" +
+                    "D;JLT\n" +
+                    "@SP\n" +
+                    "AD=M-1\n" +
+                    "A=A-1\n" +
+                    "M=-1\n" +
+                    "@SP\n" +
+                    "M=D\n" +
+                    "@END" + i + "\n" +
+                    "0;JMP\n" +
+                    "(LT" + i + ")\n" +
+                    "@SP\n" +
+                    "AD=M-1\n" +
+                    "A=A-1\n" +
+                    "M=-1\n" +
+                    "@SP\n" +
+                    "M=D\n" +
+                    "(END" + i + ")\n";
+            i++;
+        }
+        if (Parser.AND.equals(command)) {
+            asmCommand = "@SP\n" +
+                    "A=M-1\n" +
+                    "D=M\n" +
+                    "A=A-1\n" +
+                    "D=D&M\n" +
+                    "M=D\n" +
+                    "@SP\n" +
+                    "M=M-1\n";
+        }
+        if (Parser.OR.equals(command)) {
+            asmCommand = "@SP\n" +
+                    "A=M-1\n" +
+                    "D=M\n" +
+                    "A=A-1\n" +
+                    "D=D|M\n" +
+                    "M=D\n" +
+                    "@SP\n" +
+                    "M=M-1\n";
+        }
+        if (Parser.NOT.equals(command)) {
+            asmCommand = "@SP\n" +
+                    "A=M-1\n" +
+                    "D=M\n" +
+                    "D=!D\n" +
                     "M=D\n";
         }
         return asmCommand;
