@@ -204,7 +204,7 @@ public class CodeWriter {
 
     public String writePushPop(String commandType, String segment, Integer index) {
         String asmCommand = null;
-        String s = "//" + commandType + ":" + segment + ":" + index + "\n\n";
+        String s = "\n//" + commandType + ":" + segment + ":" + index + "\n";
         if (Parser.C_PUSH.equals(commandType)) {
             if (SEGMENT_CONSTANT.equals(segment)) {
                 asmCommand = "@" + index + "\n" +
@@ -213,17 +213,35 @@ public class CodeWriter {
                         "A=M\n" +
                         "M=D\n" +
                         "@SP\n" +
-                        "M=M+1\n" + s;
+                        "M=M+1\n";
             } else {
-                asmCommand = "@" + map.get(segment) + " D=A @index A=D+A D=M @SP M=D";
+                asmCommand = "@" + map.get(segment) + "\n" +
+                        "D=M\n" +
+                        "@index\n" +
+                        "A=D+A\n" +
+                        "D=M\n" +
+                        "@SP\n" +
+                        "A=M\n" +
+                        "M=D\n" +
+                        "@SP\n" +
+                        "M=M+1\n";
             }
-
-
         }
         if (Parser.C_POP.equals(commandType)) {
-            asmCommand = "@" + map.get(segment) + " D=A @" + index + " D=D+A @SP M=M-1 M=D \n";
+            asmCommand = "@" + map.get(segment) + "\n" +
+                    "D=M\n" +
+                    "@" + index + "\n" +
+                    "D=D+A\n" +
+                    "@TEMP\n" +
+                    "M=D\n" +
+                    "@SP\n" +
+                    "AM=M-1\n" +
+                    "D=M\n" +
+                    "@TEMP\n" +
+                    "A=M\n" +
+                    "M=D\n";
         }
-        return asmCommand;
+        return s + asmCommand;
     }
 
 }
