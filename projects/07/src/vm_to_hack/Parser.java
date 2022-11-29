@@ -13,7 +13,8 @@ import java.util.Map;
  * 3.去掉所有空格和注释
  */
 public class Parser {
-    private CodeWriter codeWriter = new CodeWriter();
+    private String fileName;
+    private CodeWriter codeWriter;
     public static final String SPACE = " ";
     public static final String C_ARITHMETIC = "C_ARITHMETIC";
     public static final String C_PUSH = "C_PUSH";
@@ -76,16 +77,14 @@ public class Parser {
     private String arg1;
     private Integer arg2;
 
-    public Parser(String filePath) throws IOException {
-        this(new FileInputStream(filePath));
+
+    public Parser(File file) throws IOException {
+        this(new BufferedReader(new InputStreamReader(new FileInputStream(file))));
+        this.fileName = file.getName();
+        this.codeWriter = new CodeWriter(file.getName());
     }
 
-    public Parser(InputStream inputStream) throws IOException {
-        this(new InputStreamReader(inputStream));
-    }
-
-    public Parser(Reader reader) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(reader);
+    private Parser(BufferedReader bufferedReader) throws IOException {
         String line;
         //循环读取VM文件中的信息，一次读一行
         while ((line = bufferedReader.readLine()) != null) {
@@ -175,7 +174,7 @@ public class Parser {
                 asmCommands.add(codeWriter.writeArithmetic(command));
             }
             if (C_POP.equals(commandType) || C_PUSH.equals(commandType)) {
-                asmCommands.add(codeWriter.writePushPop(commandType, arg1, arg2));
+                asmCommands.add(codeWriter.getPushPopAsmCommand(commandType, arg1, arg2));
             }
         }
         return asmCommands;
