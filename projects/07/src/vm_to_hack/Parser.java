@@ -25,6 +25,7 @@ public class Parser {
     public static final String C_FUNCTION = "C_FUNCTION";
     public static final String C_RETURN = "C_RETURN";
     public static final String C_CALL = "C_CALL";
+
     public static final String ADD = "add";
     public static final String SUB = "sub";
     public static final String NEG = "neg";
@@ -38,7 +39,7 @@ public class Parser {
     public static final String POP = "pop";
     public static final String LABEL = "label";
     public static final String GOTO = "goto";
-    public static final String IF = "if";
+    public static final String IF = "if-goto";
     public static final String FUNCTION = "function";
     public static final String CALL = "call";
     public static final String RETURN = "return";
@@ -122,11 +123,12 @@ public class Parser {
         currentCommand = commands.get(currentIndex);
         String[] split = currentCommand.split(SPACE);
         command = split[0];
-        if (!C_ARITHMETIC.equals(commandType())) {
+        if (split.length >= 2) {
             arg1 = split[1];
+        }
+        if (split.length >= 3) {
             arg2 = Integer.parseInt(split[2]);
         }
-
     }
 
     private void reset() {
@@ -170,12 +172,23 @@ public class Parser {
         while (this.hasMoreCommands()) {
             this.advance();
             String commandType = commandType();
+            String asmCommand = null;
             if (C_ARITHMETIC.equals(commandType)) {
-                asmCommands.add(codeWriter.writeArithmetic(command));
+                asmCommand = codeWriter.writeArithmetic(command);
             }
             if (C_POP.equals(commandType) || C_PUSH.equals(commandType)) {
-                asmCommands.add(codeWriter.getPushPopAsmCommand(commandType, arg1, arg2));
+                asmCommand = codeWriter.getPushPopAsmCommand(commandType, arg1, arg2);
             }
+            if (C_LABEL.equals(commandType)) {
+                asmCommand = codeWriter.getLabel(arg1);
+            }
+            if (C_IF.equals(commandType)) {
+                asmCommand = codeWriter.getIf(arg1);
+            }
+            if (C_GOTO.equals(commandType)) {
+                asmCommand = codeWriter.getGoto(arg1);
+            }
+            asmCommands.add(asmCommand);
         }
         return asmCommands;
     }

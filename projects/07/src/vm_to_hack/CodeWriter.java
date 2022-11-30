@@ -327,4 +327,85 @@ public class CodeWriter {
         return asmCommand;
     }
 
+    /**
+     * 编写执行VM初始化的汇编代码即引导程序，该代码必须被至于文件开头
+     *
+     * @return
+     */
+    private String getInit() {
+        return "";
+    }
+
+    /**
+     * 编写执行label命令的汇编代码
+     *
+     * @param label 标签
+     * @return
+     */
+    public String getLabel(String label) {
+        String asmCommand = "(" + fileName + "$" + label + ")";
+        return asmCommand;
+    }
+
+    /**
+     * 编写执行goto命令的汇编代码
+     *
+     * @param label 标签
+     * @return
+     */
+    public String getGoto(String label) {
+        String asmCommand = "@" + fileName + "$" + label + "\n" +
+                "0;JMP\n";
+        return asmCommand;
+    }
+
+    /**
+     * 编写执行if命令的汇编代码
+     *
+     * @param label 标签
+     * @return
+     */
+    public String getIf(String label) {
+        String asmCommand = "@SP\n" +
+                "AM=M-1\n" +
+                "D=M\n" +
+                "@" + fileName + "$" + label + "\n"
+                + "D;JNE\n";
+        return asmCommand;
+    }
+
+    /**
+     * 编写执行call命令的汇编代码
+     *
+     * @param functionName 方法名
+     * @param numArgs      已有参数个数
+     * @return
+     */
+    public String getCall(String functionName, Integer numArgs) {
+        String asmCommand = "";
+        return asmCommand;
+    }
+
+    /**
+     * 编写执行return命令的汇编代码
+     *
+     * @return
+     */
+    public String getReturn() {
+        String asmCommand = "n";
+        return asmCommand;
+    }
+
+    /**
+     * 编写执行function命令的汇编代码
+     *
+     * @param functionName 方法名
+     * @param numLocals    方法参数个数
+     * @return
+     */
+    public String getFunction(String functionName, Integer numLocals) {
+        String asmCommand = "(" + functionName + ")";
+        return asmCommand;
+    }
+
 }
