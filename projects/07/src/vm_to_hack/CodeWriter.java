@@ -3,6 +3,8 @@ package vm_to_hack;
 import java.util.HashMap;
 import java.util.Map;
 
+import static vm_to_hack.Parser.*;
+
 public class CodeWriter {
     private static final String SP = "SP";
     private static final String LCL = "LCL";
@@ -18,6 +20,7 @@ public class CodeWriter {
     private static final String SEGMENT_THAT = "that";
     private static final String SEGMENT_POINTER = "pointer";
     private static final String SEGMENT_TEMP = "temp";
+    private static final String SEGMENT_MEMORY = "memory";
     public static final Map<String, String> map = new HashMap<String, String>() {
         {
             this.put(SEGMENT_LOCAL, LCL);
@@ -33,6 +36,45 @@ public class CodeWriter {
 
     public CodeWriter(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getAsmCommand(String vmCommand) {
+        String command;
+        String arg1 = null;
+        String arg2 = null;
+        String[] split = vmCommand.split(SPACE);
+        command = split[0];
+        if (split.length >= 2) {
+            arg1 = split[1];
+        }
+        if (split.length >= 3) {
+            arg2 = split[2];
+        }
+
+        String asmCommand = null;
+        String commandType = Parser.commandType(command);
+        if (C_ARITHMETIC.equals(commandType)) {
+            asmCommand = this.writeArithmetic(command);
+        }
+        if (C_POP.equals(commandType) || C_PUSH.equals(commandType)) {
+            asmCommand = this.getPushPopAsmCommand(commandType, arg1, arg2);
+        }
+        if (C_LABEL.equals(commandType)) {
+            asmCommand = this.getLabel(arg1);
+        }
+        if (C_IF.equals(commandType)) {
+            asmCommand = this.getIf(arg1);
+        }
+        if (C_GOTO.equals(commandType)) {
+            asmCommand = this.getGoto(arg1);
+        }
+        if (C_RETURN.equals(commandType)) {
+            asmCommand = this.getReturn();
+        }
+        if (C_FUNCTION.equals(commandType)) {
+            asmCommand = this.getFunction(arg1, arg2);
+        }
+        return asmCommand;
     }
 
     public String writeArithmetic(String command) {
@@ -216,7 +258,7 @@ public class CodeWriter {
      * @param index       非负整数，每个segment的index从0开始
      * @return
      */
-    public String getPushPopAsmCommand(String commandType, String segment, Integer index) {
+    public String getPushPopAsmCommand(String commandType, String segment, String index) {
         String asmCommand = null;
         if (Parser.C_PUSH.equals(commandType)) {
             asmCommand = pushAsmCommand(segment, index);
@@ -232,7 +274,7 @@ public class CodeWriter {
      * @param index   非负整数，每个segment的index从0开始
      * @return pop操作的指令
      */
-    private String popAsmCommand(String segment, Integer index) {
+    private String popAsmCommand(String segment, String index) {
         String asmCommand;
         if (SEGMENT_TEMP.equals(segment) || SEGMENT_POINTER.equals(segment)) {
             asmCommand = "@" + map.get(segment) + "\n" +
@@ -283,7 +325,7 @@ public class CodeWriter {
      * @param index   非负整数，每个segment的index从0开始
      * @return push操作的指令
      */
-    private String pushAsmCommand(String segment, Integer index) {
+    private String pushAsmCommand(String segment, String index) {
         String asmCommand;
         if (SEGMENT_CONSTANT.equals(segment)) {
             asmCommand = "@" + index + "\n" +
@@ -343,7 +385,7 @@ public class CodeWriter {
      * @return
      */
     public String getLabel(String label) {
-        String asmCommand = "(" + fileName + "$" + label + ")";
+        String asmCommand = "(" + fileName + "$" + label + ")\n";
         return asmCommand;
     }
 
@@ -392,7 +434,51 @@ public class CodeWriter {
      * @return
      */
     public String getReturn() {
-        String asmCommand = "n";
+        String asmCommand = "@LCL\n" +
+                "D=M\n" +
+                "@FRAME\n" +
+                "M=D\n" +
+
+                "@5\n" +
+                "A=D-A\n" +
+                "D=M\n" +
+                "@RET\n" +
+                "M=D\n" +
+
+                "@SP\n" +
+                "A=M-1\n" +
+                "D=M\n" +
+                "@ARG\n" +
+                "A=M\n" +
+                "M=D\n" +
+
+                "D=A+1\n" +
+                "@SP\n" +
+                "M=D\n" +
+
+                "@FRAME\n" +
+                "D=M\n" +
+                "@THAT\n" +
+                "M=D-1\n" +
+
+                "@THAT\n" +
+                "D=M\n" +
+                "@THIS\n" +
+                "M=D-1\n" +
+
+                "@THIS\n" +
+                "D=M\n" +
+                "@ARG\n" +
+                "M=D-1\n" +
+
+                "@ARG\n" +
+                "D=M\n" +
+                "@LCL\n" +
+                "M=D-1\n" +
+
+                "@RET\n" +
+                "A=M\n" +
+                "0;JMP\n";
         return asmCommand;
     }
 
@@ -403,8 +489,8 @@ public class CodeWriter {
      * @param numLocals    方法参数个数
      * @return
      */
-    public String getFunction(String functionName, Integer numLocals) {
-        String asmCommand = "(" + functionName + ")";
+    public String getFunction(String functionName, String numLocals) {
+        String asmCommand = "(" + functionName + ")\n";
         return asmCommand;
     }
 

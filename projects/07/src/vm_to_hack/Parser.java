@@ -13,7 +13,6 @@ import java.util.Map;
  * 3.去掉所有空格和注释
  */
 public class Parser {
-    private String fileName;
     private CodeWriter codeWriter;
     public static final String SPACE = " ";
     public static final String C_ARITHMETIC = "C_ARITHMETIC";
@@ -73,15 +72,10 @@ public class Parser {
     /**
      * 当前汇编命令
      */
-    private String currentCommand;
-    private String command;
-    private String arg1;
-    private Integer arg2;
-
+    private String currentVmCommand;
 
     public Parser(File file) throws IOException {
         this(new BufferedReader(new InputStreamReader(new FileInputStream(file))));
-        this.fileName = file.getName();
         this.codeWriter = new CodeWriter(file.getName());
     }
 
@@ -120,21 +114,11 @@ public class Parser {
      */
     private void advance() {
         currentIndex++;
-        currentCommand = commands.get(currentIndex);
-        String[] split = currentCommand.split(SPACE);
-        command = split[0];
-        if (split.length >= 2) {
-            arg1 = split[1];
-        }
-        if (split.length >= 3) {
-            arg2 = Integer.parseInt(split[2]);
-        }
+        currentVmCommand = commands.get(currentIndex);
     }
 
     private void reset() {
-        currentCommand = null;
-        arg1 = null;
-        arg2 = null;
+        currentVmCommand = null;
         currentIndex = -1;
     }
 
@@ -144,51 +128,15 @@ public class Parser {
      * @return {@link #C_ARITHMETIC},{@link #C_PUSH},{@link #C_POP},{@link #C_LABEL},{@link #C_GOTO},
      * {@link #C_IF},{@link #C_FUNCTION},{@link #C_RETURN},{@link #C_CALL}
      */
-    public String commandType() {
+    public static String commandType(String command) {
         return commandMapType.get(command);
     }
-
-    /**
-     * 返回当前命令的第一个参数.<br>
-     * 如果当前命令类型为{@link #C_ARITHMETIC},则返回命令本身(如add,sub等).<br>
-     * 当前命令类型为{@link #C_RETURN}时,不应该调用本程序.
-     */
-    public String arg1() {
-        return arg1;
-    }
-
-    /**
-     * 返回当前命令的第二个参数.<br>
-     * 如果当前命令类型为{@link #C_ARITHMETIC},则返回命令本身(如add,sub等).<br>
-     * 当前命令类型为{@link #C_RETURN}时,不应该调用本程序.
-     */
-    public int arg2() {
-        return arg2;
-    }
-
 
     public List<String> getASMCommands() {
         List<String> asmCommands = new ArrayList<>();
         while (this.hasMoreCommands()) {
             this.advance();
-            String commandType = commandType();
-            String asmCommand = null;
-            if (C_ARITHMETIC.equals(commandType)) {
-                asmCommand = codeWriter.writeArithmetic(command);
-            }
-            if (C_POP.equals(commandType) || C_PUSH.equals(commandType)) {
-                asmCommand = codeWriter.getPushPopAsmCommand(commandType, arg1, arg2);
-            }
-            if (C_LABEL.equals(commandType)) {
-                asmCommand = codeWriter.getLabel(arg1);
-            }
-            if (C_IF.equals(commandType)) {
-                asmCommand = codeWriter.getIf(arg1);
-            }
-            if (C_GOTO.equals(commandType)) {
-                asmCommand = codeWriter.getGoto(arg1);
-            }
-            asmCommands.add(asmCommand);
+            asmCommands.add(codeWriter.getAsmCommand(currentVmCommand));
         }
         return asmCommands;
     }
