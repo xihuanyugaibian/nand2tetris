@@ -74,6 +74,9 @@ public class CodeWriter {
         if (C_FUNCTION.equals(commandType)) {
             asmCommand = this.getFunction(arg1, arg2);
         }
+        if (C_CALL.equals(commandType)) {
+            asmCommand = this.getCall(arg1, arg2);
+        }
         return asmCommand;
     }
 
@@ -423,8 +426,25 @@ public class CodeWriter {
      * @param numArgs      已有参数个数
      * @return
      */
-    public String getCall(String functionName, Integer numArgs) {
-        String asmCommand = "";
+    public String getCall(String functionName, String numArgs) {
+        String asmCommand = this.getAsmCommand("push static returnAddress") +
+                this.getAsmCommand("push static LCL") +
+                this.getAsmCommand("push static ARG") +
+                this.getAsmCommand("push static THIS") +
+                this.getAsmCommand("push static THAT") +
+                "@SP\n" +
+                "A=M\n" +
+                "D=M\n" +
+                "@LCL\n" +
+                "M=D\n" +//LCL=SP
+                "@" + Integer.parseInt(numArgs) + "\n" +
+                "D=D-A\n" +
+                "@5\n" +
+                "D=D-A\n" +
+                "@ARG\n" +
+                "M=D\n" +//ARG=SP-n-5
+                this.getAsmCommand("goto " + functionName) +
+                "(" + functionName + ")\n";
         return asmCommand;
     }
 
@@ -434,7 +454,25 @@ public class CodeWriter {
      * @return
      */
     public String getReturn() {
-        String asmCommand = "@LCL\n" +
+        /*
+        LCL地址保存的是被调用方法 LCL段的起始地址也是 被调用方法的起始地址
+        被调用方法开始地址前第1个地址 保存调用者THAT段指针
+        被调用方法开始地址前第2个地址 保存调用者THIS段指针
+        被调用方法开始地址前第3个地址 保存调用者ARG段指针
+        被调用方法开始地址前第4个地址 保存调用者LCL段指针
+        被调用方法开始地址前第5个地址 保存被调用者结束后，调用者继续执行的地址
+
+        ARG地址保存的调用者传入参数的首地址
+
+        return命令
+        1 临时变量保存LCL地址的值
+        2 LCL地址的值-5 得到返回地址 用于跳转
+        3 方法的结果 传给被调用者即 替换掉ARG中的数据
+        4 恢复调用者SP THAT THIS ARG LCL 的值
+        5 调转到返回地址  让调用者继续执行
+        */
+        String asmCommand = "\n//return\n" +
+                "@LCL\n" +
                 "D=M\n" +
                 "@FRAME\n" +
                 "M=D\n" +
@@ -458,23 +496,35 @@ public class CodeWriter {
 
                 "@FRAME\n" +
                 "D=M\n" +
+                "@1\n" +
+                "A=D-A\n" +
+                "D=M\n" +
                 "@THAT\n" +
-                "M=D-1\n" +
+                "M=D\n" +
 
-                "@THAT\n" +
+                "@FRAME\n" +
+                "D=M\n" +
+                "@2\n" +
+                "A=D-A\n" +
                 "D=M\n" +
                 "@THIS\n" +
-                "M=D-1\n" +
+                "M=D\n" +
 
-                "@THIS\n" +
+                "@FRAME\n" +
+                "D=M\n" +
+                "@3\n" +
+                "A=D-A\n" +
                 "D=M\n" +
                 "@ARG\n" +
-                "M=D-1\n" +
+                "M=D\n" +
 
-                "@ARG\n" +
+                "@FRAME\n" +
+                "D=M\n" +
+                "@4\n" +
+                "A=D-A\n" +
                 "D=M\n" +
                 "@LCL\n" +
-                "M=D-1\n" +
+                "M=D\n" +
 
                 "@RET\n" +
                 "A=M\n" +
@@ -490,8 +540,12 @@ public class CodeWriter {
      * @return
      */
     public String getFunction(String functionName, String numLocals) {
-        String asmCommand = "(" + functionName + ")\n";
-        return asmCommand;
+        StringBuilder asmCommand = new StringBuilder("//" + functionName + ":" + numLocals + "\n" +
+                "(" + functionName + ")\n");
+        for (int j = 0; j < Integer.parseInt(numLocals); j++) {
+            asmCommand.append(this.getAsmCommand("push constant 0"));
+        }
+        return asmCommand.toString();
     }
 
 }
