@@ -33,6 +33,7 @@ public class CodeWriter {
     };
     private int i;
     private String fileName;
+    private String nearestFunctionName;
 
     public CodeWriter(String fileName) {
         this.fileName = fileName;
@@ -109,7 +110,7 @@ public class CodeWriter {
         if (Parser.NOT.equals(command)) {
             asmCommand = not();
         }
-        return "\n//" + command + "\n" + asmCommand;
+        return asmCommand.replaceFirst("\n", "      //" + command + "\n");
     }
 
     private String sub() {
@@ -132,10 +133,10 @@ public class CodeWriter {
 
     private String eq(int i) {
         return "@SP\n" +
-                "A=M-1\n" +//栈顶元素的地址放入A寄存器
-                "D=M\n" +//栈顶元素的值放入D寄存器
+                "A=M-1\n" +     //栈顶元素的地址放入A寄存器
+                "D=M\n" +     //栈顶元素的值放入D寄存器
 
-                "A=A-1\n" +//次栈顶元素的地址放入A寄存器
+                "A=A-1\n" +     //次栈顶元素的地址放入A寄存器
                 "D=M-D\n" +
                 "@EQ" + i + "\n" +
                 "D;JEQ\n" +
@@ -152,9 +153,9 @@ public class CodeWriter {
                 "@SP\n" +
                 "AD=M-1\n" +
                 "A=A-1\n" +
-                "M=-1\n" +//VM中-1表示真，替换掉次栈顶元素的值并作为栈顶元素
+                "M=-1\n" +     //VM中-1表示真，替换掉次栈顶元素的值并作为栈顶元素
                 "@SP\n" +
-                "M=D\n" +//SP指向当前栈顶元素的后一位
+                "M=D\n" +     //SP指向当前栈顶元素的后一位
                 "(END" + i + ")\n";
     }
 
@@ -244,8 +245,8 @@ public class CodeWriter {
 
     private String add() {
         return "@SP\n" +
-                "A=M-1\n" +//栈顶元素的地址放入A寄存器
-                "D=M\n" +//把栈顶的元素的值放入D寄存器
+                "A=M-1\n" +     //栈顶元素的地址放入A寄存器
+                "D=M\n" +     //把栈顶的元素的值放入D寄存器
                 "A=A-1\n" +
                 "D=D+M\n" +
                 "M=D\n" +
@@ -269,7 +270,7 @@ public class CodeWriter {
         if (Parser.C_POP.equals(commandType)) {
             asmCommand = popAsmCommand(segment, index);
         }
-        return "\n//" + commandType + ":" + segment + ":" + index + "\n" + asmCommand;
+        return asmCommand.replaceFirst("\n", "     //" + commandType + ":" + segment + ":" + index + "\n");
     }
 
     /**
@@ -281,42 +282,42 @@ public class CodeWriter {
         String asmCommand;
         if (SEGMENT_TEMP.equals(segment) || SEGMENT_POINTER.equals(segment)) {
             asmCommand = "@" + map.get(segment) + "\n" +
-                    "D=A\n" +//temp和point中存放的数据作为值
+                    "D=A\n" +     //temp和point中存放的数据作为值
                     "@" + index + "\n" +
                     "D=D+A\n" +
                     "@SP\n" +
                     "A=M\n" +
-                    "M=D\n" +//把segment的地址存入当前SP指向的位置。
+                    "M=D\n" +     //把segment的地址存入当前SP指向的位置。
 
                     "A=A-1\n" +
-                    "D=M\n" +//把栈顶元素的值放入D寄存器
+                    "D=M\n" +     //把栈顶元素的值放入D寄存器
                     "@SP\n" +
                     "A=M\n" +
                     "A=M\n" +
-                    "M=D\n" +//把栈顶元素的值 存入 segment的地址中
+                    "M=D\n" +     //把栈顶元素的值 存入 segment的地址中
                     "@SP\n" +
                     "M=M-1\n";
         } else if (SEGMENT_STATIC.equals(segment)) {
             asmCommand = "@SP\n" +
                     "AM=M-1\n" +
                     "D=M\n" +
-                    "@" + fileName + "." + index + "\n" +//每当编译器遇到一个新的变量符号的时候，默认该符号表示固定的地址，从16开始。
+                    "@" + fileName + "." + index + "\n" +     //每当编译器遇到一个新的变量符号的时候，默认该符号表示固定的地址，从16开始。
                     "M=D\n";
         } else {
             asmCommand = "@" + map.get(segment) + "\n" +
-                    "D=M\n" +//local,argument，this,that中存放的数据作为地址
+                    "D=M\n" +     //local,argument，this,that中存放的数据作为地址
                     "@" + index + "\n" +
                     "D=D+A\n" +
                     "@SP\n" +
                     "A=M\n" +
-                    "M=D\n" +//把segment的地址存入当前SP指向的位置
+                    "M=D\n" +     //把segment的地址存入当前SP指向的位置
 
                     "A=A-1\n" +
-                    "D=M\n" +//把栈顶元素的值放入D寄存器
+                    "D=M\n" +     //把栈顶元素的值放入D寄存器
                     "@SP\n" +
                     "A=M\n" +
                     "A=M\n" +
-                    "M=D\n" +//把栈顶元素的值 存入 segment的地址中
+                    "M=D\n" +     //把栈顶元素的值 存入 segment的地址中
                     "@SP\n" +
                     "M=M-1\n";
         }
@@ -378,7 +379,11 @@ public class CodeWriter {
      * @return
      */
     private String getInit() {
-        return "";
+        String asmCommand = "@256     //Init\n" +
+                "D=A\n" +
+                "@SP\n" +
+                "M=D\n";
+        return asmCommand;
     }
 
     /**
@@ -388,7 +393,7 @@ public class CodeWriter {
      * @return
      */
     public String getLabel(String label) {
-        String asmCommand = "(" + fileName + "$" + label + ")\n";
+        String asmCommand = "(" + nearestFunctionName + "$" + label + ")\n";
         return asmCommand;
     }
 
@@ -399,7 +404,7 @@ public class CodeWriter {
      * @return
      */
     public String getGoto(String label) {
-        String asmCommand = "@" + fileName + "$" + label + "\n" +
+        String asmCommand = "@" + nearestFunctionName + "$" + label + "     //go:" + label + "\n" +
                 "0;JMP\n";
         return asmCommand;
     }
@@ -414,7 +419,7 @@ public class CodeWriter {
         String asmCommand = "@SP\n" +
                 "AM=M-1\n" +
                 "D=M\n" +
-                "@" + fileName + "$" + label + "\n"
+                "@" + nearestFunctionName + "$" + label + "     //if_go:" + label + "\n"
                 + "D;JNE\n";
         return asmCommand;
     }
@@ -427,24 +432,25 @@ public class CodeWriter {
      * @return
      */
     public String getCall(String functionName, String numArgs) {
-        String asmCommand = this.getAsmCommand("push static returnAddress") +
-                this.getAsmCommand("push static LCL") +
-                this.getAsmCommand("push static ARG") +
-                this.getAsmCommand("push static THIS") +
-                this.getAsmCommand("push static THAT") +
-                "@SP\n" +
-                "A=M\n" +
+        ++i;
+        String asmCommand = this.getAsmCommand("push constant " + functionName + i) +
+                this.getAsmCommand("push constant LCL") +
+                this.getAsmCommand("push constant ARG") +
+                this.getAsmCommand("push constant THIS") +
+                this.getAsmCommand("push constant THAT") +
+                "@SP     //LCL=SP\n" +
                 "D=M\n" +
                 "@LCL\n" +
-                "M=D\n" +//LCL=SP
-                "@" + Integer.parseInt(numArgs) + "\n" +
+                "M=D\n" +     //LCL=SP
+                "@" + Integer.parseInt(numArgs) + "     //ARG=SP-n-5\n" +
                 "D=D-A\n" +
                 "@5\n" +
                 "D=D-A\n" +
                 "@ARG\n" +
-                "M=D\n" +//ARG=SP-n-5
-                this.getAsmCommand("goto " + functionName) +
-                "(" + functionName + ")\n";
+                "M=D\n" +     //ARG=SP-n-5
+                "@" + functionName + "\n" +
+                "0;JMP\n" +
+                "(" + functionName + i + ")" + "     //call:" + functionName + ":" + numArgs + "\n";
         return asmCommand;
     }
 
@@ -471,15 +477,14 @@ public class CodeWriter {
         4 恢复调用者SP THAT THIS ARG LCL 的值
         5 调转到返回地址  让调用者继续执行
         */
-        String asmCommand = "\n//return\n" +
-                "@LCL\n" +
+        String asmCommand = "@LCL   //return\n" +
                 "D=M\n" +
                 "@FRAME\n" +
                 "M=D\n" +
 
                 "@5\n" +
                 "A=D-A\n" +
-                "D=M\n" +
+                "D=A\n" +
                 "@RET\n" +
                 "M=D\n" +
 
@@ -540,8 +545,11 @@ public class CodeWriter {
      * @return
      */
     public String getFunction(String functionName, String numLocals) {
-        StringBuilder asmCommand = new StringBuilder("//" + functionName + ":" + numLocals + "\n" +
-                "(" + functionName + ")\n");
+        nearestFunctionName = functionName;
+        if ("Sys.init".equals(functionName)) {
+            return getInit();
+        }
+        StringBuilder asmCommand = new StringBuilder("(" + functionName + ")    //" + functionName + ":" + numLocals + "\n");
         for (int j = 0; j < Integer.parseInt(numLocals); j++) {
             asmCommand.append(this.getAsmCommand("push constant 0"));
         }
