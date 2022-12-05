@@ -12,8 +12,8 @@ public class Main {
         List<String> asmCommand = parser.getASMCommands();
 
         String filePath1 = "D:\\fykData\\document\\计算机系统要素\\nand2tetris\\projects\\08\\FunctionCalls\\FibonacciElement\\Main.vm";
-        File file1 = new File(filePath);
-        Parser parser1 = new Parser(file);
+        File file1 = new File(filePath1);
+        Parser parser1 = new Parser(file1);
         List<String> asmCommand1 = parser1.getASMCommands();
 
         asmCommand.addAll(asmCommand1);

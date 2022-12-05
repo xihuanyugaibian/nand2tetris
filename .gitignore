@@ -6,3 +6,5 @@
 /**/*.class
 /projects/06/**/*.hack
 /projects/06/Assembler/Assembler.iml
+/projects/07/**/Sys.asm
+/projects/08/**/Sys.asm

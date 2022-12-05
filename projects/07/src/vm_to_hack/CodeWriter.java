@@ -20,7 +20,6 @@ public class CodeWriter {
     private static final String SEGMENT_THAT = "that";
     private static final String SEGMENT_POINTER = "pointer";
     private static final String SEGMENT_TEMP = "temp";
-    private static final String SEGMENT_MEMORY = "memory";
     public static final Map<String, String> map = new HashMap<String, String>() {
         {
             this.put(SEGMENT_LOCAL, LCL);
@@ -42,7 +41,7 @@ public class CodeWriter {
     public String getAsmCommand(String vmCommand) {
         String command;
         String arg1 = null;
-        String arg2 = null;
+        String arg2 = "0";
         String[] split = vmCommand.split(SPACE);
         command = split[0];
         if (split.length >= 2) {
@@ -358,6 +357,11 @@ public class CodeWriter {
                     "M=D\n" +
                     "@SP\n" +
                     "M=M+1\n";
+            if (SP.equals(index) || LCL.equals(index) || ARG.equals(index) || THIS.equals(index) || THAT.equals(index)) {
+                //SP LCL  ARG  THIS  THAT 分别代表RAM[0] RAM[1] RAM[2] RAM[3] RAM[4]
+                //这里把他们也作为Static类型，不过区别是这几个所有的文件都公用。所以把fileName去掉。
+                asmCommand = asmCommand.replaceFirst(fileName + ".", "");
+            }
         } else {
             asmCommand = "@" + map.get(segment) + "\n" +
                     "D=M\n" +
@@ -379,11 +383,10 @@ public class CodeWriter {
      * @return
      */
     private String getInit() {
-        String asmCommand = "@256     //Init\n" +
+        return "@261     //Init\n" +
                 "D=A\n" +
                 "@SP\n" +
                 "M=D\n";
-        return asmCommand;
     }
 
     /**
@@ -393,8 +396,7 @@ public class CodeWriter {
      * @return
      */
     public String getLabel(String label) {
-        String asmCommand = "(" + nearestFunctionName + "$" + label + ")\n";
-        return asmCommand;
+        return "(" + nearestFunctionName + "$" + label + ")\n";
     }
 
     /**
@@ -404,9 +406,8 @@ public class CodeWriter {
      * @return
      */
     public String getGoto(String label) {
-        String asmCommand = "@" + nearestFunctionName + "$" + label + "     //go:" + label + "\n" +
+        return "@" + nearestFunctionName + "$" + label + "     //go:" + label + "\n" +
                 "0;JMP\n";
-        return asmCommand;
     }
 
     /**
@@ -416,12 +417,11 @@ public class CodeWriter {
      * @return
      */
     public String getIf(String label) {
-        String asmCommand = "@SP\n" +
+        return "@SP\n" +
                 "AM=M-1\n" +
                 "D=M\n" +
                 "@" + nearestFunctionName + "$" + label + "     //if_go:" + label + "\n"
                 + "D;JNE\n";
-        return asmCommand;
     }
 
     /**
@@ -433,11 +433,39 @@ public class CodeWriter {
      */
     public String getCall(String functionName, String numArgs) {
         ++i;
-        String asmCommand = this.getAsmCommand("push constant " + functionName + i) +
-                this.getAsmCommand("push constant LCL") +
-                this.getAsmCommand("push constant ARG") +
-                this.getAsmCommand("push constant THIS") +
-                this.getAsmCommand("push constant THAT") +
+        return (this.getAsmCommand("push constant returnAddress:" + functionName + i) +
+                "@LCL   //push LCL\n" +
+                "D=M\n" +
+                "@SP\n" +
+                "A=M\n" +
+                "M=D\n" +
+                "@SP\n" +
+                "M=M+1\n" +
+
+                "@ARG   //push ARG\n" +
+                "D=M\n" +
+                "@SP\n" +
+                "A=M\n" +
+                "M=D\n" +
+                "@SP\n" +
+                "M=M+1\n" +
+
+                "@THIS   //push THIS\n" +
+                "D=M\n" +
+                "@SP\n" +
+                "A=M\n" +
+                "M=D\n" +
+                "@SP\n" +
+                "M=M+1\n" +
+
+                "@THAT   //push THAT\n" +
+                "D=M\n" +
+                "@SP\n" +
+                "A=M\n" +
+                "M=D\n" +
+                "@SP\n" +
+                "M=M+1\n" +
+
                 "@SP     //LCL=SP\n" +
                 "D=M\n" +
                 "@LCL\n" +
@@ -450,8 +478,7 @@ public class CodeWriter {
                 "M=D\n" +     //ARG=SP-n-5
                 "@" + functionName + "\n" +
                 "0;JMP\n" +
-                "(" + functionName + i + ")" + "     //call:" + functionName + ":" + numArgs + "\n";
-        return asmCommand;
+                "(returnAddress:" + functionName + i + ")" + "     //call:" + functionName + ":" + numArgs + "\n");
     }
 
     /**
@@ -477,18 +504,18 @@ public class CodeWriter {
         4 恢复调用者SP THAT THIS ARG LCL 的值
         5 调转到返回地址  让调用者继续执行
         */
-        String asmCommand = "@LCL   //return\n" +
+        return "@LCL   //return FRAME=LCL\n" +
                 "D=M\n" +
                 "@FRAME\n" +
                 "M=D\n" +
 
-                "@5\n" +
+                "@5     //RET=*(FRAME-5)\n" +
                 "A=D-A\n" +
-                "D=A\n" +
+                "D=M\n" +
                 "@RET\n" +
                 "M=D\n" +
 
-                "@SP\n" +
+                "@SP        //*ARG=pop()\n" +
                 "A=M-1\n" +
                 "D=M\n" +
                 "@ARG\n" +
@@ -531,10 +558,9 @@ public class CodeWriter {
                 "@LCL\n" +
                 "M=D\n" +
 
-                "@RET\n" +
+                "@RET   //goto RET\n" +
                 "A=M\n" +
                 "0;JMP\n";
-        return asmCommand;
     }
 
     /**
