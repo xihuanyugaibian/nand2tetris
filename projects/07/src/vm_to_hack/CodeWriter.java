@@ -433,38 +433,11 @@ public class CodeWriter {
      */
     public String getCall(String functionName, String numArgs) {
         ++i;
-        return (this.getAsmCommand("push constant returnAddress:" + functionName + i) +
-                "@LCL   //push LCL\n" +
-                "D=M\n" +
-                "@SP\n" +
-                "A=M\n" +
-                "M=D\n" +
-                "@SP\n" +
-                "M=M+1\n" +
-
-                "@ARG   //push ARG\n" +
-                "D=M\n" +
-                "@SP\n" +
-                "A=M\n" +
-                "M=D\n" +
-                "@SP\n" +
-                "M=M+1\n" +
-
-                "@THIS   //push THIS\n" +
-                "D=M\n" +
-                "@SP\n" +
-                "A=M\n" +
-                "M=D\n" +
-                "@SP\n" +
-                "M=M+1\n" +
-
-                "@THAT   //push THAT\n" +
-                "D=M\n" +
-                "@SP\n" +
-                "A=M\n" +
-                "M=D\n" +
-                "@SP\n" +
-                "M=M+1\n" +
+        return this.getAsmCommand("push constant returnAddress:" + functionName + i) +
+                this.getAsmCommand("push static LCL") +
+                this.getAsmCommand("push static ARG") +
+                this.getAsmCommand("push static THIS") +
+                this.getAsmCommand("push static THAT") +
 
                 "@SP     //LCL=SP\n" +
                 "D=M\n" +
@@ -478,7 +451,7 @@ public class CodeWriter {
                 "M=D\n" +     //ARG=SP-n-5
                 "@" + functionName + "\n" +
                 "0;JMP\n" +
-                "(returnAddress:" + functionName + i + ")" + "     //call:" + functionName + ":" + numArgs + "\n");
+                "(returnAddress:" + functionName + i + ")" + "     //call:" + functionName + ":" + numArgs + "\n";
     }
 
     /**
